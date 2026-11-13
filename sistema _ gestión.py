@@ -31,12 +31,28 @@ class RegistroLogs:
             f.write(f"=== INICIO DEL SISTEMA — {datetime.now()}\n")
 
 
-class ErrorSistemaGestion(Exception): pass
-class DatoInvalidoError(ErrorSistemaGestion): pass
-class ClienteDuplicadoError(ErrorSistemaGestion): pass
-class ServicioNoDisponibleError(ErrorSistemaGestion): pass
-class ReservaInvalidaError(ErrorSistemaGestion): pass
-class EstadoReservaError(ErrorSistemaGestion): pass
+class ErrorSistemaGestion(Exception): 
+    pass
+
+
+class DatoInvalidoError(ErrorSistemaGestion): 
+    pass
+
+
+class ClienteDuplicadoError(ErrorSistemaGestion): 
+     pass
+
+
+class ServicioNoDisponibleError(ErrorSistemaGestion): 
+    pass
+
+
+class ReservaInvalidaError(ErrorSistemaGestion): 
+    pass
+
+
+class EstadoReservaError(ErrorSistemaGestion): 
+    pass
 
 
 # ==================================================
@@ -44,9 +60,12 @@ class EstadoReservaError(ErrorSistemaGestion): pass
 # ==================================================
 class EntidadBase(ABC):
     @abstractmethod
-    def validar_datos(self): pass
+    def validar_datos(self):
+        pass
+    
     @abstractmethod
-    def __str__(self): pass
+    def __str__(self): 
+        pass
 
 
 # ==================================================
@@ -54,38 +73,49 @@ class EntidadBase(ABC):
 # ==================================================
 class Cliente(EntidadBase):
     def __init__(self, identificacion, nombre, correo, telefono=""):
-        self.__identificacion = identificacion
-        self.__nombre = nombre
-        self.__correo = correo
-        self.__telefono = telefono
+        self.__identificacion = str (identificacion).strip()
+        self.__nombre = str (nombre).strip()
+        self.__correo = str (correo).strip()
+        self.__telefono = str (telefono).strip()
         self._activo = True
         self.validar_datos()
 
     def validar_datos(self):
         try:
-            if not self.__identificacion or len(self.__identificacion) < 5:
+            if len(self.__identificacion) < 5:
                 raise DatoInvalidoError("Identificación inválida (mínimo 5 caracteres)")
-            if not self.__nombre or len(self.__nombre.strip()) < 3:
+            if len (self.__nombre.strip()) < 3:
                 raise DatoInvalidoError("Nombre inválido (mínimo 3 caracteres)")
-            if "@" not in self.__correo or "." not in self.__correo:
-                raise DatoInvalidoError(f"Correo con formato incorrecto: {self.__correo}")
-            RegistroLogs.escribir("info", f"Cliente registrado: {self.__nombre}")
+            if "@" not in self.__correo or "." not in self.__correo.split("@")[-1]:
+                raise DatoInvalidoError("El correo electronico no tiene un formato valido.")
         except DatoInvalidoError:
+            RegistroLogs.escribir("Error", "validación de cliente fallida" )
             raise
-        except Exception as e:
-            RegistroLogs.escribir("error", f"Error validando cliente: {e}")
-            raise DatoInvalidoError(str(e)) from e
+        else:
+            RegistroLogs.escribir("info", f"Datos validades para {self.__nombre}")
+        finally:
+            # Este bloque se ejecuta si la validación funciona como si falla.
+            pass
 
     @property
-    def identificacion(self): return self.__identificacion
+    def identificacion(self):
+        return self.__identificacion
+    
     @property
-    def nombre(self): return self.__nombre
+    def nombre(self): 
+        return self.__nombre
+    
     @property
-    def correo(self): return self.__correo
+    def correo(self):
+        return self.__correo
+    
     @property
-    def telefono(self): return self.__telefono
+    def telefono(self):
+        return self.__telefono
+    
     @property
-    def activo(self): return self._activo
+    def activo(self):
+        return self._activo
 
     def desactivar(self):
         self._activo = False
@@ -137,14 +167,24 @@ class Servicio(ABC):
         self.disponible = True
         self.validar_datos()
 
-    @abstractmethod
-    def validar_datos(self): pass
+    def validar_base(self):
+        if not self.codigo or not self.nombre or not self.descripcion:
+            raise DatoInvalidoError("codigo, nombre y descripción son obligatorios.")
+        if not isinstance(self.precio_base, (int, float)) or self.precio_base < 0:
+            raise DatoInvalidoError("El precio base debe ser un mumero no negativo.")
+
 
     @abstractmethod
-    def calcular_costo(self, **kwargs): pass
+    def validar_datos(self):
+        pass
 
     @abstractmethod
-    def describir(self): pass
+    def calcular_costo(self, **kwargs):
+        pass
+
+    @abstractmethod
+    def describir(self):
+        pass
 
     def marcar_no_disponible(self):
         self.disponible = False
@@ -165,24 +205,34 @@ class ReservaSala(Servicio):
         super().__init__(codigo, nombre, descripcion, precio_base)
 
     def validar_datos(self):
-        if self.capacidad <= 0 or self.precio_base < 0:
-            raise DatoInvalidoError("Valores deben ser positivos")
+        self.validar_base()
+        if not isinstance(self.capacidad, int) or self .capacidad <=0:
+            raise DatoInvalidoError ("La capcidad debe ser un entero mayor que cero.")
+        if not isinstance(self.tarifa_extra, (int, float)) or self.tarifa_extra <0:
+            raise DatoInvalidoError("La tarifa extra no puede ser negativa.")
 
-    def calcular_costo(self, duracion, personas=0, descuento=0, **kwargs):
+
+
+    def calcular_costo(self, duracion, personas=0, descuento=0, impuesto=0):
         try:
-            if duracion <= 0:
+            if not isinstance(duracion, (int, float)) or duracion <=0:
                 raise ValueError("Duración debe ser mayor a cero")
-            total = self.precio_base * duracion
-            if personas > self.capacidad * 0.7:
-                total *= 1.10
-            if duracion > 4:
-                total += (duracion - 4) * self.tarifa_extra
-            if 0 <= descuento <= 0.5:
-                total *= (1 - descuento)
-            return round(total, 2)
-        except TypeError:
-            raise ReservaInvalidaError("Parámetros deben ser numéricos")
+            if not isinstance(personas,int) or personas < 0 or personas > self.capacidad:
+                raise ValueError("La  cantidad de personas no es válidad para esta sala")
+            if not 0 <= descuento <=0.5:
+                raise ValueError("El descuen debe estar entre 0 y 0.5")
+            if not 0< impuesto <= 1:
+                raise ValueError("El impuesto debe estar entre o y 1")
 
+            Total= self.precio_base *duracion
+            if duracion > 4:
+                Total += (duracion - 4) * self.tarifa_extra
+            Total *= (1 - descuento)
+            Total *= (1 + impuesto)
+            return round(Total, 2)
+        except(TypeError, ValueError) as error:
+            raise ReservaInvalidaError(f"Error al calcular la sala: {error} ") from error
+        
     def describir(self):
         return f"Sala: {self.nombre} — Capacidad: {self.capacidad} personas | Precio/hora: ${self.precio_base:,.2f}"
 
@@ -197,10 +247,15 @@ class AlquilerEquipos(Servicio):
         super().__init__(codigo, nombre, descripcion, precio_base)
 
     def validar_datos(self):
-        if self.deposito < 0 or self.stock < 0:
-            raise DatoInvalidoError("Valores no pueden ser negativos")
+        self.validar_base()
+        if not isinstance(self.deposito, (int, float)) or self.deposito < 0:
+            raise DatoInvalidoError("El deposito debe ser un nnumero negativo.")
+        if not isinstance(self.stock, int) or self.stock < 0:
+            raise DatoInvalidoError("El stock debe ser un entero  o negativo.")
+           
+    
 
-    def calcular_costo(self, dias, cantidad=1, incluir_deposito=False, **kwargs):
+    def calcular_costo(self, dias, cantidad=1, incluir_deposito=False, descuento=0):
         try:
             if dias <= 0 or cantidad < 1:
                 raise ValueError("Valores deben ser positivos")
@@ -356,41 +411,49 @@ class GestorReservas:
 # ==================================================
 def main():
     RegistroLogs.iniciar()
-    print("=" * 60)
-    print("SISTEMA INTEGRAL DE GESTIÓN — EMPRESA SOFTWARE FJ")
-    print("=" * 60)
+    Clientes = GestorClientes()
+    Servicios = GestorServicios()
+    reservas = GestorReservas ()
 
-    gestor_clientes = GestorClientes()
-    gestor_servicios = GestorServicios()
-    gestor_reservas = GestorReservas()
+    print ("=" * 60)
+    print ("SISTEMA INTEGRAL DE GESTION - SOFTWARE FJ")
+    print ("=" * 60)
 
-    print("\n📌 REGISTRO DE CLIENTES")
+    #1 Registro de cliente válido
+    cliente1 = Cliente("123456789", "Maria lopez", "maria@gmail.com", "3001234567")
+    Clientes.registrar (cliente1)
+    print ("1.", cliente1)
+
+    #2 Registro de otro cliente válido
+    cliente2 =("987654321", "carlos perez", "carlos@gmail.com")
+    Clientes.registrar (cliente2)
+    print ("2", cliente2)
+
+    #3 Intento de clientes inválidos´
     try:
-        c1 = Cliente("123456789", "María López", "maria@email.com", "3001234567")
-        gestor_clientes.registrar(c1)
-        print(f"✅ {c1}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+        Cliente("123", "Ana" "correo invalido")
+    except DatoInvalidoError as error:
+        print("3. Error esperado al crear cliente:", error)
 
+    #4 Intento de cliente duplicado
     try:
-        c2 = Cliente("12345", "J Pérez", "correo_invalido")
-        gestor_clientes.registrar(c2)
-        print(f"✅ {c2}")
-    except DatoInvalidoError as e:
-        print(f"❌ Error esperado: {e}")
+        Clientes.registrar(Cliente("123456789" "Maria lopez" "mari@gmail.com"))
+    except ClienteDuplicadoError as error:
+        print("4 Error esperado por duplicado:", error)
 
-    print("\n📌 REGISTRO DE SERVICIOS")
-    try:
-        sala = ReservaSala("S001", "Sala de Conferencias", "Capacidad para reuniones", 50000, 30, 15000)
-        gestor_servicios.registrar(sala)
-        print(f"✅ {sala}")
-        print(f"   {sala.describir()}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    # 5, 6 y 7 Registro de los tres tipos de servicios
+    sala = ReservaSala("S001", "Sala de reuniones", "Sala de reuniones", 50000, 30, 10000)
+    equipos = AlquilerEquipos("E001", "portátil", "Equipo portátil", 25000, 100000, 5)
+    asesoria = AsesoriaEspecializada(
+        "A001", "AsesorÍa informática", "AsesorÍa técnica", 60000, "SENIOR", "VIRTUAL"
+ )
+    Servicios.registrar(sala)
+    Servicios.registrar(equipos)
+    Servicios.registrar(asesoria)
+    print("5. servicios registrado:", (sala.describir))
+    print("6. servicios registrado:", (equipos.describir))
+    print("7. sevicios registrado:",  (asesoria.describir))
 
-    try:
-        equipo = AlquilerEquipos("E001", "Laptop Diseño", "Equipo de alto rendimiento", 25000, 500000, 5)
-        gestor_servicios.registrar(equipo)
-        print(f"✅ {equipo}")
-        print(f"   {equipo.describir()}")
-    except 
+    #8 Reservas exitosas de sala
+    reserva1 = reservas.crear(cliente1, sala, 2, personas=10 descuento=0.10, impuesto=0.19)
+    print("8.", reserva1.confirmar())
