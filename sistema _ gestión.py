@@ -455,5 +455,31 @@ def main():
     print("7. sevicios registrado:",  (asesoria.describir))
 
     #8 Reservas exitosas de sala
+<<<<<<< HEAD
+    reserva1 = reservas.crear(cliente1, asesoria, 2, personas=10, descuento=0.10, deposito=0.19)
+    print("8.", reserva1.confirmar())
+
+    #9 Reserva de equipos
+    reserva2 = reservas.crear(cliente2, equipos, 3, cantidad=2, incluir_deposito=True)
+    print("9.", reserva2.confirmar())
+
+    #10 Cancelación y devolución de equipos
+    print("10.", reserva2.cancelar())
+
+    #11 Reserva exxitosa de asesoria 
+    reserva3 = reservas.crear(cliente1, asesoria, 2, descuento=0.05, impuesto=0.19)
+    print("11.", reserva3.confirmar())
+
+    #12 Intento de reserva con servicio no disponible
+    sala.marcar_no_disponible()
+    try:
+        reservas.crear(cliente1, sala, 1)
+    except EstadoReservaError as error:
+        print("12.,error esperado por servico no disponible:", error)
+
+if __name__ == "__main__":
+    main()
+=======
     reserva1 = reservas.crear(cliente1, sala, 2, personas=10 descuento=0.10, impuesto=0.19)
     print("8.", reserva1.confirmar())
+>>>>>>> 344c203e5789a79690129fd86a8ac08f1dcda34d
