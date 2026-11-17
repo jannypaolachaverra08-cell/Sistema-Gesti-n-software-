@@ -455,7 +455,6 @@ def main():
     print("7. sevicios registrado:",  (asesoria.describir))
 
     #8 Reservas exitosas de sala
-<<<<<<< HEAD
     reserva1 = reservas.crear(cliente1, asesoria, 2, personas=10, descuento=0.10, deposito=0.19)
     print("8.", reserva1.confirmar())
 
@@ -479,7 +478,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-=======
-    reserva1 = reservas.crear(cliente1, sala, 2, personas=10 descuento=0.10, impuesto=0.19)
-    print("8.", reserva1.confirmar())
->>>>>>> 344c203e5789a79690129fd86a8ac08f1dcda34d
